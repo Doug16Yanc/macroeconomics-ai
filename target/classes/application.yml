@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: macroeconomics-ai
+  threads:
+    virtual:
+      enabled: true
+
+  ai:
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          model: gemini-3-flash-preview
+          temperature: 0.2
+          max-output-tokens: 2048
+
+fred:
+  api:
+    key: ${FRED_API_KEY}
+    base-url: https://api.stlouisfed.org/fred
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.springframework.ai: DEBUG
