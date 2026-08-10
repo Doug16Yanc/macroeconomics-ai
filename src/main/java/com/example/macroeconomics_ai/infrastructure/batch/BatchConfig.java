@@ -1,4 +1,4 @@
-package com.example.macroeconomics_ai.config;
+package com.example.macroeconomics_ai.infrastructure.batch;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

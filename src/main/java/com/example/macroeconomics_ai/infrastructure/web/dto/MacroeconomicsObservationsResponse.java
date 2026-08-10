@@ -1,4 +1,4 @@
-package com.example.macroeconomics_ai.dto;
+package com.example.macroeconomics_ai.infrastructure.web.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

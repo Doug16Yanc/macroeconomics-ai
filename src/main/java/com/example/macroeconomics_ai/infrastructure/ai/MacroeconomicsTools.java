@@ -1,8 +1,7 @@
-package com.example.macroeconomics_ai.tool;
+package com.example.macroeconomics_ai.infrastructure.ai;
 
 import com.example.macroeconomics_ai.client.MacroeconomicsClient;
-import com.example.macroeconomics_ai.dto.MacroeconomicsObservationsResponse;
-import com.example.macroeconomics_ai.dto.MacroeconomicsSeriesResult;
+import com.example.macroeconomics_ai.infrastructure.web.dto.MacroeconomicsSeriesResult;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;

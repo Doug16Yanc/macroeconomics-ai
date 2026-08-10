@@ -1,4 +1,4 @@
-package com.example.macroeconomics_ai.controller;
+package com.example.macroeconomics_ai.infrastructure.web.controller;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.web.bind.annotation.GetMapping;

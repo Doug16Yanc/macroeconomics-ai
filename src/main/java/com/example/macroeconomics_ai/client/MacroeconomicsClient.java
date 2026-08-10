@@ -1,7 +1,7 @@
 package com.example.macroeconomics_ai.client;
 
-import com.example.macroeconomics_ai.dto.MacroeconomicsObservationsResponse;
-import com.example.macroeconomics_ai.dto.MacroeconomicsSeriesInfoResponse;
+import com.example.macroeconomics_ai.infrastructure.web.dto.MacroeconomicsObservationsResponse;
+import com.example.macroeconomics_ai.infrastructure.web.dto.MacroeconomicsSeriesInfoResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;

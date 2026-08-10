@@ -1,9 +1,7 @@
-package com.example.macroeconomics_ai.config;
+package com.example.macroeconomics_ai.infrastructure.batch;
 
-import com.example.macroeconomics_ai.model.FredObservation;
-import com.example.macroeconomics_ai.model.FredSeriesRequest;
-import com.example.macroeconomics_ai.processor.FredObservationProcessor;
-import com.example.macroeconomics_ai.writer.FredObservationWriter;
+import com.example.macroeconomics_ai.domain.model.FredObservation;
+import com.example.macroeconomics_ai.domain.model.FredSeriesRequest;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
@@ -12,7 +10,6 @@ import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.infrastructure.item.support.ListItemReader;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.LocalDate;
 import java.util.List;

@@ -1,12 +1,11 @@
-package com.example.macroeconomics_ai.writer;
+package com.example.macroeconomics_ai.infrastructure.batch;
 
-import com.example.macroeconomics_ai.model.FredObservation;
+import com.example.macroeconomics_ai.domain.model.FredObservation;
 import org.springframework.batch.infrastructure.item.Chunk;
 import org.springframework.batch.infrastructure.item.ItemWriter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 

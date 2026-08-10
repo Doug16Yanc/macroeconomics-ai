@@ -1,4 +1,4 @@
-package com.example.macroeconomics_ai.model;
+package com.example.macroeconomics_ai.domain.model;
 
 import java.time.LocalDate;
 

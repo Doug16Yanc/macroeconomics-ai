@@ -1,4 +1,4 @@
-package com.example.macroeconomics_ai.controller;
+package com.example.macroeconomics_ai.infrastructure.web.controller;
 
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
