@@ -1,5 +1,7 @@
 package com.example.macroeconomics_ai.infrastructure.ai;
 
+import com.example.macroeconomics_ai.infrastructure.bcb.BcbTools;
+import com.example.macroeconomics_ai.infrastructure.fred.FredTools;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.context.annotation.Bean;
@@ -9,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 public class ChatClientConfig {
 
     @Bean
-    public ChatClient chatClient(ChatModel chatModel, MacroeconomicsTools macroeconomicsTools) {
+    public ChatClient chatClient(ChatModel chatModel, FredTools fredTools, BcbTools bcbTools) {
         return ChatClient.builder(chatModel)
                 .defaultSystem("""
                     You are a senior macroeconomics analyst producing written reports for an
@@ -62,7 +64,7 @@ public class ChatClientConfig {
                        questions about a single metric, call only the relevant single-series
                        tool.
                     """)
-                .defaultTools(macroeconomicsTools)
+                .defaultTools(fredTools, bcbTools)
                 .build();
     }
 }

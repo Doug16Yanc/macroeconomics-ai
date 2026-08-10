@@ -30,6 +30,15 @@ spring:
           temperature: 0.2
           max-output-tokens: 2048
 
+bcb:
+  api:
+    base-url: ${BCB_API_BASE_URL}
+  series:
+    selic: "432"
+    ipca: "433"
+    selic-effective: "11"
+    exchange-rate: "1"
+
 fred:
   api:
     key: ${FRED_API_KEY}

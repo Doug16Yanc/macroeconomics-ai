@@ -12,29 +12,26 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/jobs")
-public class FredIngestionController {
+public class BcbIngestionController {
 
     private final JobOperator jobOperator;
     private final JobRepository jobRepository;
-    private final Job fredIngestionJob;
+    private final Job bcbIngestionJob;
 
-    public FredIngestionController(JobOperator jobOperator, JobRepository jobRepository, Job fredIngestionJob) {
+    public BcbIngestionController(JobOperator jobOperator, JobRepository jobRepository, Job bcbIngestionJob) {
         this.jobOperator = jobOperator;
         this.jobRepository = jobRepository;
-        this.fredIngestionJob = fredIngestionJob;
+        this.bcbIngestionJob = bcbIngestionJob;
     }
 
-    @PostMapping("/fred-ingestion")
+    @PostMapping("/bcb-ingestion")
     public ResponseEntity<Map<String, Object>> trigger() throws Exception {
 
         var params = new JobParametersBuilder()
                 .addLong("timestamp", System.currentTimeMillis())
                 .toJobParameters();
 
-        var execution = jobOperator.start(
-                fredIngestionJob,
-                params
-        );
+        var execution = jobOperator.start(bcbIngestionJob, params);
 
         return ResponseEntity
                 .accepted()
@@ -44,9 +41,8 @@ public class FredIngestionController {
                 ));
     }
 
-    @GetMapping("/fred-ingestion/{executionId}")
-    public ResponseEntity<JobStatusResponse> status(
-            @PathVariable Long executionId) {
+    @GetMapping("/bcb-ingestion/{executionId}")
+    public ResponseEntity<JobStatusResponse> status(@PathVariable Long executionId) {
 
         var execution = jobRepository.getJobExecution(executionId);
 
@@ -64,4 +60,3 @@ public class FredIngestionController {
         );
     }
 }
-
