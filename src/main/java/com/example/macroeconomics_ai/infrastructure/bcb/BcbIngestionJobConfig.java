@@ -1,6 +1,6 @@
 package com.example.macroeconomics_ai.infrastructure.bcb;
 
-import com.example.macroeconomics_ai.domain.model.BcbSeriesRequest;
+import com.example.macroeconomics_ai.domain.model.bcb.BcbSeriesRequest;
 import com.example.macroeconomics_ai.domain.model.MonetaryIndicator;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;

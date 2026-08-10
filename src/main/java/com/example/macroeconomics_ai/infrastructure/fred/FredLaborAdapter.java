@@ -1,8 +1,8 @@
 package com.example.macroeconomics_ai.infrastructure.fred;
 
 import com.example.macroeconomics_ai.client.MacroeconomicsClient;
-import com.example.macroeconomics_ai.domain.model.LaborMarketIndicator;
-import com.example.macroeconomics_ai.domain.port.LaborMarketDataPort;
+import com.example.macroeconomics_ai.domain.model.fred.FredLaborIndicator;
+import com.example.macroeconomics_ai.domain.port.FredLaborDataPort;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Component
-public class FredLaborAdapter implements LaborMarketDataPort {
+public class FredLaborAdapter implements FredLaborDataPort {
 
     private final MacroeconomicsClient macroeconomicsClient;
 
@@ -19,7 +19,7 @@ public class FredLaborAdapter implements LaborMarketDataPort {
     }
 
     @Override
-    public List<LaborMarketIndicator> getObservations(String indicator, String sector, String region, LocalDate start) {
+    public List<FredLaborIndicator> getObservations(String indicator, String sector, String region, LocalDate start) {
         if (sector != null || region != null) {
             throw new UnsupportedOperationException(
                     "FRED labor series are not broken down by sector or region; use CagedLaborAdapter for that."
@@ -34,7 +34,7 @@ public class FredLaborAdapter implements LaborMarketDataPort {
 
         return response.observations().stream()
                 .filter(obs -> obs.value() != null && !obs.value().equals("."))
-                .map(obs -> new LaborMarketIndicator(
+                .map(obs -> new FredLaborIndicator(
                         "FRED",
                         null,
                         null,

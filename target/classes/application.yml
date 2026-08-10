@@ -39,6 +39,10 @@ bcb:
     selic-effective: "11"
     exchange-rate: "1"
 
+sidra:
+  api:
+    base-url: ${SIDRA_API_BASE_URL}
+
 fred:
   api:
     key: ${FRED_API_KEY}

@@ -1,6 +1,6 @@
 package com.example.macroeconomics_ai.infrastructure.fred;
 
-import com.example.macroeconomics_ai.domain.model.FredObservation;
+import com.example.macroeconomics_ai.domain.model.fred.FredObservation;
 import org.springframework.batch.infrastructure.item.Chunk;
 import org.springframework.batch.infrastructure.item.ItemWriter;
 import org.springframework.jdbc.core.JdbcTemplate;

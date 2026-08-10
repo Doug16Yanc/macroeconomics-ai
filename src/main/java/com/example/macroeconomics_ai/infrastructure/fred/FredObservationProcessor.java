@@ -1,8 +1,8 @@
 package com.example.macroeconomics_ai.infrastructure.fred;
 
 import com.example.macroeconomics_ai.client.MacroeconomicsClient;
-import com.example.macroeconomics_ai.domain.model.FredObservation;
-import com.example.macroeconomics_ai.domain.model.FredSeriesRequest;
+import com.example.macroeconomics_ai.domain.model.fred.FredObservation;
+import com.example.macroeconomics_ai.domain.model.fred.FredSeriesRequest;
 import org.springframework.batch.infrastructure.item.ItemProcessor;
 import org.springframework.stereotype.Component;
 

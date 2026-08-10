@@ -1,6 +1,6 @@
 package com.example.macroeconomics_ai.infrastructure.bcb;
 
-import com.example.macroeconomics_ai.domain.model.BcbSeriesRequest;
+import com.example.macroeconomics_ai.domain.model.bcb.BcbSeriesRequest;
 import com.example.macroeconomics_ai.domain.model.MonetaryIndicator;
 import com.example.macroeconomics_ai.domain.port.MonetaryDataPort;
 import org.springframework.batch.infrastructure.item.ItemProcessor;

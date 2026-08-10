@@ -2,7 +2,7 @@ package com.example.macroeconomics_ai.infrastructure.fred;
 
 import com.example.macroeconomics_ai.client.MacroeconomicsClient;
 import com.example.macroeconomics_ai.domain.model.MonetaryIndicator;
-import com.example.macroeconomics_ai.domain.port.LaborMarketDataPort;
+import com.example.macroeconomics_ai.domain.port.FredLaborDataPort;
 import com.example.macroeconomics_ai.domain.port.MonetaryDataPort;
 import com.example.macroeconomics_ai.infrastructure.web.dto.MacroeconomicsSeriesResult;
 import org.springframework.ai.tool.annotation.Tool;
@@ -19,13 +19,13 @@ public class FredTools {
 
     private final MacroeconomicsClient macroeconomicsClient;
     private final MonetaryDataPort fredMonetaryAdapter;
-    private final LaborMarketDataPort fredLaborAdapter;
+    private final FredLaborDataPort fredLaborAdapter;
     private final ObjectMapper objectMapper;
 
     public FredTools(
             MacroeconomicsClient macroeconomicsClient,
             @Qualifier("fredMonetaryAdapter") MonetaryDataPort fredMonetaryAdapter,
-            @Qualifier("fredLaborAdapter") LaborMarketDataPort fredLaborAdapter,
+            @Qualifier("fredLaborAdapter") FredLaborDataPort fredLaborAdapter,
             ObjectMapper objectMapper) {
 
         this.macroeconomicsClient = macroeconomicsClient;
