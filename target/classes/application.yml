@@ -5,12 +5,28 @@ spring:
     virtual:
       enabled: true
 
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
   ai:
     google:
       genai:
         api-key: ${GEMINI_API_KEY}
         chat:
-          model: gemini-3-flash-preview
+          model: ${GEMINI_MODEL:gemini-3.1-flash-lite}
           temperature: 0.2
           max-output-tokens: 2048
 
@@ -21,7 +37,3 @@ fred:
 
 server:
   port: 8080
-
-logging:
-  level:
-    org.springframework.ai: DEBUG
