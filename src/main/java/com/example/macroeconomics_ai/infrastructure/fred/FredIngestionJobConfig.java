@@ -23,7 +23,16 @@ public class FredIngestionJobConfig {
                 new FredSeriesRequest("UNRATE", null, LocalDate.now().minusYears(1)),
                 new FredSeriesRequest("ICSA", null, LocalDate.now().minusMonths(6)),
                 new FredSeriesRequest("JTSJOL", null, LocalDate.now().minusYears(1)),
-                new FredSeriesRequest("PAYEMS", "chg", LocalDate.now().minusYears(1))
+                new FredSeriesRequest("PAYEMS", "chg", LocalDate.now().minusYears(1)),
+                new FredSeriesRequest("CPIAUCSL", "pc1", LocalDate.now().minusYears(2)),
+                new FredSeriesRequest("FEDFUNDS", null, LocalDate.now().minusYears(2)),
+                new FredSeriesRequest("GDP", null, LocalDate.now().minusYears(3)),
+                new FredSeriesRequest("DGS10", null, LocalDate.now().minusYears(2)),
+                new FredSeriesRequest("SP500", null, LocalDate.now().minusYears(1)),
+                new FredSeriesRequest("M2SL", null, LocalDate.now().minusYears(2)),
+                new FredSeriesRequest("T10Y2Y", null, LocalDate.now().minusYears(2)),
+                new FredSeriesRequest("INDPRO", null, LocalDate.now().minusYears(2)),
+                new FredSeriesRequest("DTWEXBGS", null, LocalDate.now().minusYears(2))
         ));
     }
 

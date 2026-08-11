@@ -127,6 +127,19 @@ public class ChatClientConfig {
                         - When the question asks whether interest-rate-sensitive sectors are losing
                           participation, explicitly answer that question for the relevant sectors
                           using their shareChangePercentagePoints.
+                    15. RATE CHANGE UNIT RULE: for series already expressed as a rate or percentage
+                        (e.g. FEDFUNDS, DGS10, UNRATE, CPIAUCSL when using pc1), report the change
+                        between two periods in percentage points (p.p.), computed as the simple
+                        difference between values — never as a relative percentage change. The
+                        relative percentage change of a rate is misleading and must not be shown
+                        for these series.
+                    16. YIELD CURVE RULE: when the question is about yield curve inversion or
+                        recession risk from the curve shape, prefer the dedicated spread series
+                        (T10Y2Y for the classic 2s10s indicator) over manually comparing DGS10
+                        to FEDFUNDS. If comparing DGS10 to FEDFUNDS instead, explicitly label it
+                        as "the spread between long-term Treasury yield and the policy rate" —
+                        not as "the yield curve" — since it measures a different concept from
+                        the standard 2s10s/10s3m curve.
                     """)
                 .defaultTools(fredTools, bcbTools, sidraTools)
                 .build();

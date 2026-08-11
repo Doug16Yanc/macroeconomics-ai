@@ -9,9 +9,9 @@ import org.springframework.web.client.RestClient;
 public class BcbRestClientConfig {
 
     @Bean
-    public RestClient bcbRestClient(@Value("${bcb.api.base-url}") String baseUrll) {
+    public RestClient bcbRestClient(@Value("${bcb.api.base-url}") String baseUrl) {
         return RestClient.builder()
-                .baseUrl(baseUrll)
+                .baseUrl(baseUrl)
                 .defaultHeader("Accept","application/json")
                 .build();
     }

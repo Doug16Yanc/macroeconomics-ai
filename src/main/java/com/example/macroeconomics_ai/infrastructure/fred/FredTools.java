@@ -1,9 +1,12 @@
 package com.example.macroeconomics_ai.infrastructure.fred;
 
+import com.example.macroeconomics_ai.application.service.FredEconomicService;
 import com.example.macroeconomics_ai.client.MacroeconomicsClient;
-import com.example.macroeconomics_ai.domain.model.MonetaryIndicator;
+import com.example.macroeconomics_ai.domain.model.series.SeriesAverage;
+import com.example.macroeconomics_ai.domain.model.series.SeriesChange;
+import com.example.macroeconomics_ai.domain.model.series.SeriesTrend;
 import com.example.macroeconomics_ai.domain.port.FredLaborDataPort;
-import com.example.macroeconomics_ai.domain.port.MonetaryDataPort;
+import com.example.macroeconomics_ai.infrastructure.web.dto.MacroeconomicsObservation;
 import com.example.macroeconomics_ai.infrastructure.web.dto.MacroeconomicsSeriesResult;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
@@ -18,133 +21,116 @@ import java.util.List;
 public class FredTools {
 
     private final MacroeconomicsClient macroeconomicsClient;
-    private final MonetaryDataPort fredMonetaryAdapter;
+    private final FredEconomicService fredEconomicService;
     private final FredLaborDataPort fredLaborAdapter;
     private final ObjectMapper objectMapper;
 
     public FredTools(
             MacroeconomicsClient macroeconomicsClient,
-            @Qualifier("fredMonetaryAdapter") MonetaryDataPort fredMonetaryAdapter,
+            FredEconomicService fredEconomicService,
             @Qualifier("fredLaborAdapter") FredLaborDataPort fredLaborAdapter,
             ObjectMapper objectMapper) {
 
         this.macroeconomicsClient = macroeconomicsClient;
-        this.fredMonetaryAdapter = fredMonetaryAdapter;
+        this.fredEconomicService = fredEconomicService;
         this.fredLaborAdapter = fredLaborAdapter;
         this.objectMapper = objectMapper;
     }
 
     @Tool(description = """
-            Returns the most recent quarterly U.S. GDP (Gross Domestic Product)
-            values, including title and unit, in billions of dollars.
+            Returns a full analysis of a FRED economic series over a lookback window:
+            latest value, absolute and percentage change, average, and trend direction.
+            Use this instead of fetching raw observations when the user wants context,
+            not just numbers.
             """)
-    public MacroeconomicsSeriesResult americanPib(
-            @ToolParam(description = "Number of recent quarters to look back, roughly")
-            int monthsBack) {
-
-        return buildResult("GDP", monthsBack, null);
-    }
-
-    @Tool(description = """
-            Returns the most recent monthly U.S. year-over-year inflation rate
-            (CPI percentage change vs. the same month one year earlier),
-            including title and unit, as a percentage.
-            """)
-    public MacroeconomicsSeriesResult americanInflation(
+    public String getSeriesAnalysis(
+            @ToolParam(description = "Official FRED series ID, e.g. CPIAUCSL, UNRATE, FEDFUNDS, SP500, DGS10, M2SL")
+            String seriesId,
             @ToolParam(description = "Number of recent months to look back")
             int monthsBack) {
 
-        return buildResult("CPIAUCSL", monthsBack, "Percent change from year ago");
+        var start = LocalDate.now().minusMonths(monthsBack);
+        var end = LocalDate.now();
+
+        var change = fredEconomicService.calculateChange(seriesId, start, end);
+        var average = fredEconomicService.calculateAverage(seriesId, start, end);
+        var trend = fredEconomicService.calculateTrend(seriesId, start, end);
+        var title = resolveTitle(seriesId);
+
+        record SeriesAnalysisResult(
+                String seriesId, String title,
+                SeriesChange change, SeriesAverage average, SeriesTrend trend
+        ) {}
+
+        return serialize(new SeriesAnalysisResult(seriesId, title, change, average, trend));
     }
 
     @Tool(description = """
-            Returns the most recent monthly U.S. unemployment rate,
-            including title and unit, in percentage.
+            Compares two FRED series over the same lookback window, returning
+            the change of each and which one moved more (more volatile).
+            Useful for questions like inflation vs interest rates, or S&P 500 vs M2.
             """)
-    public MacroeconomicsSeriesResult americanUnemploymentRate(
-            @ToolParam(description = "Number of recent months to look back")
-            int monthsBack) {
+    public String compareTwoSeries(
+            @ToolParam(description = "First FRED series ID") String seriesIdA,
+            @ToolParam(description = "Second FRED series ID") String seriesIdB,
+            @ToolParam(description = "Number of recent months to look back") int monthsBack) {
 
-        return buildResult("UNRATE", monthsBack, null);
+        var start = LocalDate.now().minusMonths(monthsBack);
+        var end = LocalDate.now();
+
+        return serialize(fredEconomicService.compareSeries(seriesIdA, seriesIdB, start, end));
     }
 
     @Tool(description = """
-            Returns the most recent monthly U.S. Federal Funds Rate set by
-            the FED, including title and unit, in percentage.
-            """)
-    public MacroeconomicsSeriesResult fedInterestRate(
-            @ToolParam(description = "Number of recent months to look back")
-            int monthsBack) {
-
-        return buildResult("FEDFUNDS", monthsBack, null);
-    }
-
-    @Tool(description = """
-            Returns observations for any FRED economic series using its
-            official series_id (e.g., SP500, DGS10, PAYEMS, M2SL),
-            including the series title and unit. Returns raw level values.
+            Returns raw observations for any FRED series over a lookback window,
+            including title and unit. Use only when the user explicitly wants
+            the raw data points, not an analysis.
             """)
     public MacroeconomicsSeriesResult fredCustomSerie(
             @ToolParam(description = "Official FRED series ID, e.g., SP500, DGS10, PAYEMS")
             String seriesId,
-
             @ToolParam(description = "Number of recent months to look back")
             int monthsBack) {
 
-        return buildResult(seriesId, monthsBack, null);
+        var start = LocalDate.now().minusMonths(monthsBack);
+        var end = LocalDate.now();
+
+        var observations = fredEconomicService.findObservations(seriesId, start, end);
+        var info = macroeconomicsClient.getSeriesInfo(seriesId).seriess().stream().findFirst().orElse(null);
+
+        String title = info != null ? info.title() : seriesId;
+        String units = info != null ? info.unitsShort() : "unknown";
+
+        var rawObservations = observations.stream()
+                .map(obs -> new MacroeconomicsObservation(null, null, obs.date().toString(), obs.value().toString()))
+                .toList();
+
+        return new MacroeconomicsSeriesResult(seriesId, title, units, rawObservations);
     }
 
     @Tool(description = """
             Get labor market data from FRED.
-
-            Supported series:
-            UNRATE = unemployment rate,
-            PAYEMS = total nonfarm payroll employment,
-            ICSA = initial unemployment insurance claims,
-            JTSJOL = job openings.
+            Supported series: UNRATE, PAYEMS, ICSA, JTSJOL.
             """)
     public String getLaborMarketSeries(
-            @ToolParam(description = "FRED series ID: UNRATE, PAYEMS, ICSA, JTSJOL")
-            String seriesId,
-
-            @ToolParam(description = "Number of months to look back")
-            int monthsBack) {
+            @ToolParam(description = "FRED series ID: UNRATE, PAYEMS, ICSA, JTSJOL") String seriesId,
+            @ToolParam(description = "Number of months to look back") int monthsBack) {
 
         var start = LocalDate.now().minusMonths(monthsBack);
         var observations = fredLaborAdapter.getObservations(seriesId, null, null, start);
-
         return serialize(observations);
     }
 
-    private MacroeconomicsSeriesResult buildResult(String seriesId, int monthsBack, String unitsLabelOverride) {
-        var start = LocalDate.now().minusMonths(monthsBack);
-        List<MonetaryIndicator> observations = fredMonetaryAdapter.getObservations(seriesId, start);
-
-        var info = macroeconomicsClient
-                .getSeriesInfo(seriesId)
-                .seriess()
-                .stream()
-                .findFirst()
-                .orElse(null);
-
-        String title = info != null ? info.title() : seriesId;
-        String resolvedUnits = unitsLabelOverride != null
-                ? unitsLabelOverride
-                : info != null ? info.unitsShort() : "unknown";
-
-        var rawObservations = observations.stream()
-                .map(obs -> new com.example.macroeconomics_ai.infrastructure.web.dto.MacroeconomicsObservation(
-                        null, null, obs.date().toString(), obs.value().toString()))
-                .toList();
-
-        return new MacroeconomicsSeriesResult(seriesId, title, resolvedUnits, rawObservations);
+    private String resolveTitle(String seriesId) {
+        var info = macroeconomicsClient.getSeriesInfo(seriesId).seriess().stream().findFirst().orElse(null);
+        return info != null ? info.title() : seriesId;
     }
 
     private String serialize(Object data) {
         try {
             return objectMapper.writeValueAsString(data);
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to serialize FRED observations", e);
+            throw new IllegalStateException("Failed to serialize FRED data", e);
         }
     }
 }
