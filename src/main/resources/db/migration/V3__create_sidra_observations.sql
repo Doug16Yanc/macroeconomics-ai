@@ -29,25 +29,16 @@ CREATE TABLE sidra_observations (
 );
 
 CREATE INDEX idx_sidra_observations_variable_period
-    ON sidra_observations (
-       variable_id,
-       period_code DESC
-    );
+    ON sidra_observations (variable_id, period_code DESC);
 
 CREATE INDEX idx_sidra_observations_territory_period
-    ON sidra_observations (
-       territory_id,
-       period_code DESC
-    );
+    ON sidra_observations (territory_id, period_code DESC);
 
 CREATE INDEX idx_sidra_observations_category_period
-    ON sidra_observations (
-       category_id,
-       period_code DESC
-    );
+    ON sidra_observations (category_id, period_code DESC);
 
 CREATE INDEX idx_sidra_observations_table_variable
-    ON sidra_observations (
-       table_id,
-       variable_id
-    );
+    ON sidra_observations (table_id, variable_id);
+
+CREATE INDEX idx_sidra_observations_lookup
+    ON sidra_observations (table_id, variable_id, period_code);

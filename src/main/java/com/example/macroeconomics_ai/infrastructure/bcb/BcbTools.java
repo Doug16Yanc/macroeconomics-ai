@@ -1,31 +1,28 @@
 package com.example.macroeconomics_ai.infrastructure.bcb;
 
-import com.example.macroeconomics_ai.domain.port.MonetaryDataPort;
+import com.example.macroeconomics_ai.application.service.BcbMonetaryService;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
-import java.time.LocalDate;
-
 @Component
 public class BcbTools {
 
-    private final MonetaryDataPort bcbMonetaryAdapter;
+    private final BcbMonetaryService bcbMonetaryService;
     private final ObjectMapper objectMapper;
 
     private final String selicSeriesId;
     private final String ipcaSeriesId;
 
     public BcbTools(
-            @Qualifier("bcbMonetaryAdapter") MonetaryDataPort bcbMonetaryAdapter,
+            BcbMonetaryService bcbMonetaryService,
             ObjectMapper objectMapper,
             @Value("${bcb.series.selic}") String selicSeriesId,
             @Value("${bcb.series.ipca}") String ipcaSeriesId) {
 
-        this.bcbMonetaryAdapter = bcbMonetaryAdapter;
+        this.bcbMonetaryService = bcbMonetaryService;
         this.objectMapper = objectMapper;
         this.selicSeriesId = selicSeriesId;
         this.ipcaSeriesId = ipcaSeriesId;
@@ -39,9 +36,7 @@ public class BcbTools {
             Selic target, or Brazilian base interest rate.
             """)
     public String brazilSelicRate(
-            @ToolParam(description = "Number of months to look back")
-            int monthsBack) {
-
+            @ToolParam(description = "Number of months to look back") int monthsBack) {
         return call(selicSeriesId, monthsBack);
     }
 
@@ -50,39 +45,27 @@ public class BcbTools {
             expressed as monthly percentage change.
             """)
     public String brazilInflation(
-            @ToolParam(description = "Number of months to look back")
-            int monthsBack) {
-
+            @ToolParam(description = "Number of months to look back") int monthsBack) {
         return call(ipcaSeriesId, monthsBack);
     }
 
     @Tool(description = """
-            Returns any Brazilian BCB/SGS series by its official numeric code.
+            Returns any Brazilian BCB/SGS series by its official numeric code,
+            already persisted and filtered up to the current date.
             Use this tool when a specific BCB/SGS series is requested.
             """)
     public String bcbCustomSerie(
-            @ToolParam(description = "Official BCB/SGS series code")
-            String seriesId,
-
-            @ToolParam(description = "Number of months to look back")
-            int monthsBack) {
-
+            @ToolParam(description = "Official BCB/SGS series code") String seriesId,
+            @ToolParam(description = "Number of months to look back") int monthsBack) {
         return call(seriesId, monthsBack);
     }
 
     private String call(String seriesId, int monthsBack) {
-
-        var start = LocalDate.now().minusMonths(monthsBack);
-
-        var observations =
-                bcbMonetaryAdapter.getObservations(seriesId, start);
-
+        var observations = bcbMonetaryService.getSeries(seriesId, monthsBack);
         try {
             return objectMapper.writeValueAsString(observations);
         } catch (Exception e) {
-            throw new IllegalStateException(
-                    "Failed to serialize BCB observations", e);
+            throw new IllegalStateException("Failed to serialize BCB observations", e);
         }
     }
 }
-

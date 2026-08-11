@@ -1,5 +1,7 @@
 package com.example.macroeconomics_ai.infrastructure.sidra;
 
+import com.example.macroeconomics_ai.application.service.SidraLaborService;
+import com.example.macroeconomics_ai.domain.model.sidra.OccupationSummary;
 import com.example.macroeconomics_ai.domain.model.sidra.SidraLaborQuery;
 import com.example.macroeconomics_ai.domain.port.SidraLaborDataPort;
 import org.springframework.ai.tool.annotation.Tool;
@@ -13,49 +15,64 @@ import java.time.LocalDate;
 @Component
 public class SidraTools {
 
-    private final SidraLaborDataPort sidraLaborDataPort;
-    private final ObjectMapper objectMapper;
+    private final SidraLaborService sidraLaborService;
 
-    public SidraTools(
-            @Qualifier("sidraLaborAdapter")
-            SidraLaborDataPort sidraLaborDataPort,
-            ObjectMapper objectMapper) {
-
-        this.sidraLaborDataPort = sidraLaborDataPort;
-        this.objectMapper = objectMapper;
+    public SidraTools(SidraLaborService sidraLaborService) {
+        this.sidraLaborService = sidraLaborService;
     }
 
     @Tool(description = """
-            Returns Brazilian employment data from IBGE's PNAD Contínua,
-            using SIDRA table 5434.
-
-            The data represents people aged 14 or older who were employed
-            during the reference week.
-
-            The table can be filtered by activity group and territory.
+            Returns Brazilian employment distribution by economic activity group,
+            from IBGE's PNAD Contínua (SIDRA table 5434). Percentage change,
+            employment trend, period-by-period movements, sectoral share at
+            the beginning and end of the analysis window, and share change in percentage points
+            are already computed. Do not recalculate them. Use the provided metrics directly
+            to distinguish changes in employment from changes in sectoral composition.
             """)
-    public String brazilEmployment(
-            @ToolParam(description = "Number of quarters to look back")
-            int quartersBack) {
+    public String brazilEmploymentByActivity(
+            @ToolParam(description = "Number of quarters to look back") int quartersBack) {
+        return format(sidraLaborService.occupationByActivity(quartersBack));
+    }
 
-        var start = LocalDate.now().minusMonths(quartersBack * 3L);
+    private String format(OccupationSummary summary) {
 
-        var query = new SidraLaborQuery(
-                "5434",
-                "4090",
-                "888",
-                "47946",
-                null,
-                start
+        StringBuilder sb = new StringBuilder(
+                "Reference period: " + summary.referencePeriod() + "\n\n"
         );
 
-        var observations = sidraLaborDataPort.getObservations(query);
-
-        try {
-            return objectMapper.writeValueAsString(observations);
-        } catch (Exception e) {
-            throw new IllegalStateException(
-                    "Failed to serialize SIDRA observations", e);
+        for (var a : summary.activities()) {
+            sb.append("""
+          - %s:
+          emprego atual: %s mil pessoas
+          emprego inicial: %s mil pessoas
+          participação inicial: %s%%
+          participação atual: %s%%
+          mudança na participação: %s pontos percentuais
+          variação no período (%s a %s): %s%%
+          observações disponíveis: %d
+          períodos de crescimento: %d
+          períodos de queda: %d
+          períodos estáveis: %d
+          tendência linear: %s mil pessoas/trimestre
+        """.formatted(
+                    a.category(),
+                    a.employedThousands(),
+                    a.startEmployedThousands(),
+                    a.startSharePercentage(),
+                    a.currentSharePercentage(),
+                    a.shareChangePercentagePoints(),
+                    a.periodChangeStart(),
+                    a.periodChangeEnd(),
+                    a.percentageChangeInPeriod(),
+                    a.periodCount(),
+                    a.increasingPeriods(),
+                    a.decreasingPeriods(),
+                    a.stablePeriods(),
+                    a.trendSlope()
+            ));
         }
+
+        return sb.toString();
     }
+
 }

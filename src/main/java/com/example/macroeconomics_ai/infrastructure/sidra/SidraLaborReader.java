@@ -13,12 +13,20 @@ public class SidraLaborReader extends ListItemReader<SidraLaborQuery> {
     public SidraLaborReader() {
         super(List.of(
                 new SidraLaborQuery(
-                        "5434",                       // tabela
-                        "4090",                       // variável
-                        "888",                        // classificação
-                        "47946",                      // Total
-                        null,                          // Brasil
-                        LocalDate.now().minusYears(15) // período inicial
+                        "5434",
+                        "4090",
+                        "888",
+                        "all",
+                        null,
+                        LocalDate.now().minusYears(15)
+                ),
+                new SidraLaborQuery(
+                        "5434",
+                        "4108",
+                        "888",
+                        "all",
+                        null,
+                        LocalDate.now().minusYears(15)
                 )
         ));
     }

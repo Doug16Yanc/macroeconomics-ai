@@ -11,6 +11,4 @@ public interface SidraLaborDataPort {
     List<SidraLaborIndicator> getObservations(
             SidraLaborQuery query
     );
-
-    void saveAll(List<SidraLaborObservation> observations);
 }
