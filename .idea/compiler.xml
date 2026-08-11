@@ -6,13 +6,13 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="fred-ai-project" />
+        <module name="macroeconomics-ai-project" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
-      <module name="fred-ai-project" options="-parameters" />
+      <module name="macroeconomics-ai-project" options="-parameters" />
     </option>
   </component>
 </project>

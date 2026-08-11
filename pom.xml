@@ -13,7 +13,7 @@
     <artifactId>macroeconomics-ai</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>macroeconomics-ai</name>
-    <description>AI Agent (Spring AI) that queries US macroeconomic data via the FRED API</description>
+    <description>AI Agent (Spring AI) that queries US and Brazil macroeconomic data via the FRED, BCB and SIDRA/IBGE</description>
     <properties>
         <java.version>25</java.version>
         <spring-ai.version>2.0.0</spring-ai.version>
