@@ -2,10 +2,16 @@
 
 An AI agent built with **Spring AI** that answers questions about U.S. and Brazilian
 macroeconomics using real, up-to-date data from **FRED** (Federal Reserve Economic
-Data) and **BCB/SGS** (Banco Central do Brasil). The agent uses tool calling to query
-live series (inflation, unemployment, interest rates, GDP, exchange rate, and more)
-and produces structured, analyst-style reports — in English or Portuguese, matching
-the language of the question.
+Data — U.S. market), **BCB/SGS** (Banco Central do Brasil) and **SIDRA/IBGE**
+(Sistema IBGE de Recuperação Automática — Brazilian market). The agent uses tool
+calling to query live series (inflation, unemployment, interest rates, GDP, exchange
+rate, labor market by sector, and more) and produces structured, analyst-style
+reports — in English or Portuguese, matching the language of the question.
+
+**Spring Batch** is the backbone of data ingestion: it pulls and processes
+high-volume data from each of these sources — FRED, BCB/SGS, and SIDRA/IBGE — into
+a local Postgres cache, so the agent always answers from fresh, pre-processed data
+instead of hitting external APIs on every question.
 
 > 📘 Built while studying the *Spring AI* book — a hands-on companion project to the
 > concepts covered in its chapters on `ChatClient`, tool calling, and model
@@ -21,43 +27,46 @@ investment advice**. Do not use this project as a basis for investment decisions
 ## Features
 
 - 🤖 **Tool-calling agent** built with Spring AI's `ChatClient` and `@Tool` annotations
-- 🌎 **Multi-country coverage** — U.S. data via FRED, Brazilian data via BCB/SGS
+- 🌎 **Multi-country coverage** — U.S. data via FRED, Brazilian data via BCB/SGS and SIDRA/IBGE
 - 📊 **Real economic data**, no hardcoded or invented numbers, sourced from official
-  central bank APIs
-- 📈 U.S. indicators out of the box:
+  central bank and statistical institute APIs
+- 📈 U.S. indicators out of the box (FRED):
     - Inflation (CPI, year-over-year % change)
     - Unemployment rate
     - Federal Funds Rate
     - GDP
     - Labor market series (payrolls, jobless claims, job openings)
     - Any custom FRED series by ID (e.g. `SP500`, `DGS10`, `M2SL`, `PAYEMS`)
-- 📈 Brazilian indicators out of the box:
+- 📈 Brazilian indicators out of the box (BCB/SGS + SIDRA/IBGE):
     - Selic rate (base interest rate)
     - IPCA inflation
     - USD/BRL exchange rate
+    - Employment by economic activity (SIDRA) — including sectoral breakdown of services
     - Any custom BCB/SGS series by numeric code
-- 🇺🇸🇧🇷 **Cross-country comparisons** — the agent queries both sources independently
+- 🇺🇸🇧🇷 **Cross-country comparisons** — the agent queries sources independently
   and never assumes a trend from one country applies to the other
 - 🗣️ **Responds in the question's language** (English or Portuguese)
 - 📝 Generates **structured, analyst-style reports** in Markdown (headline, key
   figures table, trend & context, historical perspective)
-- 🔁 Multi-tool chaining — the agent combines multiple indicators, and multiple
-  countries, to answer comparative questions
-- 💾 **Local persistence via Spring Batch** — series are ingested into Postgres on
-  demand, so the agent reads from a local cache-first table instead of hitting the
-  external API on every question
-- ⚡ Series metadata (title, unit) is cached in memory to avoid redundant FRED calls
+- 🔁 Multi-tool chaining — the agent combines multiple indicators and multiple
+  sources/countries to answer comparative questions
+- 💾 **Spring Batch as the ingestion and processing engine** — high-volume series
+  from FRED, BCB/SGS, and SIDRA/IBGE are pulled, transformed, and persisted into
+  Postgres on demand, so the agent reads from a local cache-first table instead of
+  hitting external APIs on every question
+- ⚡ Series metadata (title, unit) is cached in memory to avoid redundant external calls
 
 ## Tech Stack
 
 - **Java 25**
 - **Spring Boot 4.1.0**
 - **Spring AI 2.0.0**
-- **Spring Batch** — scheduled/on-demand ingestion into Postgres
+- **Spring Batch** — ingestion and processing engine for all three data sources
 - **PostgreSQL** + **Flyway** — versioned schema, local observation cache
 - **Google Gemini API** (`spring-ai-starter-model-google-genai`) — free tier
 - **FRED API** (Federal Reserve Bank of St. Louis)
 - **BCB/SGS API** (Banco Central do Brasil — Sistema Gerenciador de Séries Temporais)
+- **SIDRA/IBGE API** (Sistema IBGE de Recuperação Automática)
 - Virtual Threads (Project Loom) enabled
 
 ## Architecture Overview
@@ -74,9 +83,9 @@ domain/
 infrastructure/
   fred/     → FredMonetaryAdapter, FredLaborAdapter, FredRestClientConfig
   bcb/      → BcbMonetaryAdapter, BcbRestClientConfig
-  caged/    → CagedLaborAdapter (planned — see Roadmap)
-  batch/    → ingestion jobs (Fred + Bcb), reader/processor/writer per source
-  ai/       → ChatClientConfig, FredTools, BcbTools (@Tool methods)
+  sidra/    → SidraLaborAdapter, SidraRestClientConfig
+  batch/    → ingestion jobs (Fred + Bcb + Sidra), reader/processor/writer per source
+  ai/       → ChatClientConfig, FredTools, BcbTools, SidraTools (@Tool methods)
   web/      → ChatController, ingestion trigger controllers
 ```
 
@@ -93,22 +102,25 @@ User request (GET /chat?message=...)
         │   tool-chaining rules, language-matching rule
         │
         ▼
-  FredTools / BcbTools (@Tool methods)
+  FredTools / BcbTools / SidraTools (@Tool methods)
         │
         ▼
   MonetaryDataPort / LaborMarketDataPort   ← domain ports
         │
         ▼
-  FredMonetaryAdapter / BcbMonetaryAdapter  ← infrastructure adapters
+  FredMonetaryAdapter / BcbMonetaryAdapter / SidraLaborAdapter  ← infrastructure adapters
         │
         ▼
-  FRED API  /  BCB SGS API
+  FRED API  /  BCB SGS API  /  IBGE SIDRA
 ```
 
 Separately, a **Spring Batch** pipeline ingests observations into Postgres
-(`fred_observations`, `bcb_observations`) on demand via REST trigger, giving the
-agent a local, idempotent cache to query instead of re-hitting external APIs on
-every question.
+(`fred_observations`, `bcb_observations`, `sidra_observations`) on demand via REST
+trigger — one job per source, each with its own reader/processor/writer — giving
+the agent a local, idempotent cache to query instead of re-hitting external APIs on
+every question. This is the layer that handles volume: pagination, batching, and
+chunk-oriented processing for series that can span years of daily or monthly
+observations across three independent sources.
 
 The LLM decides which tools to call based on the user's question, retrieves real
 data from the relevant source(s), and synthesizes a structured report — citing
@@ -124,7 +136,7 @@ exact values, dates, and units returned by the tools.
   credit card required)
 - A [Google AI Studio API key](https://aistudio.google.com/) (free tier, no credit
   card required)
-- No API key required for BCB/SGS — it's a public, unauthenticated endpoint
+- No API key required for BCB/SGS or SIDRA/IBGE — both are public, unauthenticated endpoints
 
 ### Configuration
 
@@ -183,6 +195,10 @@ bcb:
   api:
     base-url: https://api.bcb.gov.br/dados/serie
 
+sidra:
+  api:
+    base-url: https://apisidra.ibge.gov.br/values
+
 server:
   port: 8080
 ```
@@ -196,11 +212,12 @@ server:
 ### Ingesting data
 
 Before asking the agent questions, trigger ingestion so the local cache is
-populated:
+populated — one Spring Batch job per source:
 
 ```bash
 curl -X POST http://localhost:8080/jobs/fred-ingestion
 curl -X POST http://localhost:8080/jobs/bcb-ingestion
+curl -X POST http://localhost:8080/jobs/sidra-ingestion
 ```
 
 Check job status:
@@ -208,6 +225,7 @@ Check job status:
 ```bash
 curl http://localhost:8080/jobs/fred-ingestion/{jobExecutionId}
 curl http://localhost:8080/jobs/bcb-ingestion/{jobExecutionId}
+curl http://localhost:8080/jobs/sidra-ingestion/{jobExecutionId}
 ```
 
 ### Usage
@@ -227,19 +245,11 @@ curl "http://localhost:8080/chat?message=Qual é a taxa Selic atual e como ela v
 **Brazil (Portuguese):**
 - `Qual é a taxa Selic atual e como ela variou nos últimos 6 meses?`
 - `Como está o câmbio dólar/real nos últimos 3 meses, e isso tem relação com a inflação brasileira (IPCA) no mesmo período?`
+- `Como está o emprego no setor de serviços segundo o SIDRA, e isso é coerente com a trajetória da Selic?`
 
 **Cross-country:**
 - `Compare a política monetária dos EUA e do Brasil: como estão a Fed Funds Rate e a Selic atualmente, e o que essa diferença sugere?`
-
-## Roadmap
-
-- [ ] **CAGED integration** (Brazilian formal labor market, sector/region-level) —
-  unlike FRED and BCB/SGS, CAGED has no simple public REST/JSON API; data access
-  requires bulk file ingestion via `FlatFileItemReader` (Spring Batch), not a live
-  REST adapter. Planned as a separate ingestion strategy.
-- [ ] Application-layer service for genuine cross-source use cases (e.g. a
-  `TechHiringComparisonService` correlating U.S. and Brazilian labor data) — not
-  yet needed, since today's tools each query a single source.
+  
 
 ## Lessons Learned
 
@@ -256,21 +266,28 @@ A few things worth noting from building this:
   "always call all relevant tools" in the system prompt wasn't reliable. Giving it
   one concrete worked example (a specific question mapped to specific tool calls)
   fixed multi-tool chaining consistently — this held true again when extending the
-  rule to cross-country tool calls.
+  rule to cross-country and cross-source tool calls.
 - **A shared port signature can hide a source-specific assumption.**
   `LaborMarketDataPort` was originally designed with CAGED's sector/region
   dimensions in mind; retrofitting FRED (which has no sector/region breakdown)
   onto that same signature required adding an explicit `indicator` parameter and
   making `sector`/`region` nullable — a reminder that abstracting behind an
   interface too early, before a second real implementation exists, risks baking in
-  the first source's shape.
+  the first source's shape. Adding SIDRA as a third implementation validated the
+  port again, since its sector-breakdown shape maps more naturally to the original
+  signature than FRED's did.
 - **Formatting bugs aren't always the model's fault.** A "missing spaces" bug
   turned out to be the API client's Markdown preview renderer, not the LLM output
   itself — always check the raw response before blaming the model.
 - **Precision assumptions don't transfer between sources.** Copying the FRED
-  observations schema (`NUMERIC(20,4)`) for the new BCB table would have silently
-  truncated Selic values like `0.052531` to `0.0525` — each source's decimal
-  precision needs to be checked, not assumed.
+  observations schema (`NUMERIC(20,4)`) for the new BCB and SIDRA tables would have
+  silently truncated Selic values like `0.052531` to `0.0525` — each source's
+  decimal precision needs to be checked, not assumed.
+- **Batch jobs need to be genuinely per-source, not one generic job.** FRED, BCB,
+  and SIDRA each paginate, rate-limit, and format dates/decimals differently.
+  Keeping a separate Spring Batch job (reader/processor/writer) per source — rather
+  than a single "generic ingestion job" — kept each adapter's quirks isolated
+  instead of leaking into shared step logic.
 
 ## License
 
